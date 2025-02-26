@@ -1,0 +1,63 @@
+name: Reusable Terraform Workflow
+
+on:
+  workflow_call:
+    inputs:
+      terraform_directory:
+        required: true
+        type: string
+      terraform_version:
+        required: false
+        type: string
+        default: "1.5.7"
+      apply:
+        required: false
+        type: boolean
+        default: false
+      destroy:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  terraform:
+    name: Terraform Operations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Initialize Terraform
+        run: |
+          cd ${{ inputs.terraform_directory }}
+          terraform init
+
+      - name: Validate Terraform
+        run: |
+          cd ${{ inputs.terraform_directory }}
+          terraform validate
+
+      - name: Terraform Plan
+        run: |
+          cd ${{ inputs.terraform_directory }}
+          terraform plan -out=tfplan
+        if: always()
+
+      - name: Terraform Apply
+        run: |
+          cd ${{ inputs.terraform_directory }}
+          ls -l
+          terraform apply -auto-approve tfplan
+        if: ${{ inputs.apply }}
+
+      - name: Terraform Destroy
+        run: |
+          cd ${{ inputs.terraform_directory }}
+          terraform destroy -auto-approve
+        if: ${{ inputs.destroy }}
